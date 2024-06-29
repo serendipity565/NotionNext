@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-
+import { useRef, useEffect, useState } from 'react'
 /**
  * 可拖拽组件
  */
-export const Draggable = props => {
-  const { children, stick } = props
+
+export const Draggable = (props) => {
+  const { children } = props
   const draggableRef = useRef(null)
   const rafRef = useRef(null)
   const [moving, setMoving] = useState(false)
@@ -14,10 +14,8 @@ export const Draggable = props => {
     const draggableElements = document.getElementsByClassName('draggable')
 
     // 标准化鼠标事件对象
-    function e(event) {
-      // 定义事件对象标准化函数
-      if (!event) {
-        // 兼容IE浏览器
+    function e(event) { // 定义事件对象标准化函数
+      if (!event) { // 兼容IE浏览器
         event = window.event
         event.target = event.srcElement
         event.layerX = event.offsetX
@@ -42,10 +40,9 @@ export const Draggable = props => {
     document.onmousedown = start
     document.ontouchstart = start
 
-    function start(event) {
-      // 按下鼠标时，初始化处理
+    function start (event) { // 按下鼠标时，初始化处理
       if (!draggableElements) return
-      event = e(event) // 获取标准事件对象
+      event = e(event)// 获取标准事件对象
 
       for (const drag of draggableElements) {
         // 判断鼠标点击的区域是否是拖拽框内
@@ -63,20 +60,19 @@ export const Draggable = props => {
         offsetX = event.mx - currentObj.offsetLeft
         offsetY = event.my - currentObj.offsetTop
 
-        document.onmousemove = move // 注册鼠标移动事件处理函数
+        document.onmousemove = move// 注册鼠标移动事件处理函数
         document.ontouchmove = move
-        document.onmouseup = stop // 注册松开鼠标事件处理函数
+        document.onmouseup = stop// 注册松开鼠标事件处理函数
         document.ontouchend = stop
       }
     }
 
-    function move(event) {
-      // 鼠标移动处理函数
+    function move(event) { // 鼠标移动处理函数
       event = e(event)
       rafRef.current = requestAnimationFrame(() => updatePosition(event))
     }
 
-    const stop = event => {
+    const stop = (event) => {
       event = e(event)
       document.documentElement.style.overflow = 'auto' // 恢复默认的滚动行为
       cancelAnimationFrame(rafRef.current)
@@ -84,7 +80,7 @@ export const Draggable = props => {
       currentObj = document.ontouchmove = document.ontouchend = document.onmousemove = document.onmouseup = null
     }
 
-    const updatePosition = event => {
+    const updatePosition = (event) => {
       if (currentObj) {
         const left = event.mx - offsetX
         const top = event.my - offsetY
@@ -124,17 +120,14 @@ export const Draggable = props => {
         if (offsetTop < 0) {
           drag.firstElementChild.style.top = 0
         }
-        if (offsetTop > clientHeight - offsetHeight) {
+        if (offsetTop > (clientHeight - offsetHeight)) {
           drag.firstElementChild.style.top = clientHeight - offsetHeight + 'px'
         }
         if (offsetLeft < 0) {
           drag.firstElementChild.style.left = 0
         }
-        if (offsetLeft > clientWidth - offsetWidth) {
+        if (offsetLeft > (clientWidth - offsetWidth)) {
           drag.firstElementChild.style.left = clientWidth - offsetWidth + 'px'
-        }
-        if (stick === 'left') {
-          drag.firstElementChild.style.left = 0 + 'px'
         }
       }
     }
@@ -149,11 +142,9 @@ export const Draggable = props => {
     }
   }, [])
 
-  return (
-    <div className={`draggable ${moving ? 'cursor-grabbing' : 'cursor-grab'} select-none`} ref={draggableRef}>
-      {children}
-    </div>
-  )
+  return <div className={`draggable ${moving ? 'cursor-grabbing' : 'cursor-grab'} select-none`} ref={draggableRef}>
+     {children}
+  </div>
 }
 
 Draggable.defaultProps = { left: 0, top: 0 }

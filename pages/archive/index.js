@@ -1,18 +1,19 @@
-import BLOG from '@/blog.config'
-import { siteConfig } from '@/lib/config'
-import { getGlobalData } from '@/lib/db/getSiteData'
-import { isBrowser } from '@/lib/utils'
-import { formatDateFmt } from '@/lib/utils/formatDate'
-import { getLayoutByTheme } from '@/themes/theme'
-import { useRouter } from 'next/router'
+import { getGlobalData } from '@/lib/notion/getNotionData'
 import { useEffect } from 'react'
+import { useGlobal } from '@/lib/global'
+import BLOG from '@/blog.config'
+import { useRouter } from 'next/router'
+import { getLayoutByTheme } from '@/themes/theme'
+import { isBrowser } from '@/lib/utils'
+import { formatDateFmt } from '@/lib/formatDate'
+import { siteConfig } from '@/lib/config'
 
 const ArchiveIndex = props => {
+  const { siteInfo } = props
+  const { locale } = useGlobal()
+
   // 根据页面路径加载不同Layout文件
-  const Layout = getLayoutByTheme({
-    theme: siteConfig('THEME'),
-    router: useRouter()
-  })
+  const Layout = getLayoutByTheme({ theme: siteConfig('THEME'), router: useRouter() })
 
   useEffect(() => {
     if (isBrowser) {
@@ -28,15 +29,23 @@ const ArchiveIndex = props => {
     }
   }, [])
 
+  const meta = {
+    title: `${locale.NAV.ARCHIVE} | ${siteConfig('TITLE')}`,
+    description: siteConfig('DESCRIPTION'),
+    image: siteInfo?.pageCover,
+    slug: 'archive',
+    type: 'website'
+  }
+
+  props = { ...props, meta }
+
   return <Layout {...props} />
 }
 
-export async function getStaticProps({ locale }) {
-  const props = await getGlobalData({ from: 'archive-index', locale })
+export async function getStaticProps() {
+  const props = await getGlobalData({ from: 'archive-index' })
   // 处理分页
-  props.posts = props.allPages?.filter(
-    page => page.type === 'Post' && page.status === 'Published'
-  )
+  props.posts = props.allPages?.filter(page => page.type === 'Post' && page.status === 'Published')
   delete props.allPages
 
   const postsSortByDate = Object.create(props.posts)
@@ -61,13 +70,7 @@ export async function getStaticProps({ locale }) {
 
   return {
     props,
-    revalidate: process.env.EXPORT
-      ? undefined
-      : siteConfig(
-          'NEXT_REVALIDATE_SECOND',
-          BLOG.NEXT_REVALIDATE_SECOND,
-          props.NOTION_CONFIG
-        )
+    revalidate: parseInt(BLOG.NEXT_REVALIDATE_SECOND)
   }
 }
 

@@ -8,7 +8,7 @@ function SiteInfo ({ title }) {
 
   return (
         <footer
-            className='relative leading-6 justify-start w-full text-gray-600 dark:text-gray-300 text-xs '
+            className='relative leading-6 justify-start w-full text-gray-600 dark:text-gray-300 text-xs font-sans'
         >
             <span> © {`${copyrightDate}`} <span> <a href={siteConfig('LINK')}> <i className='mx-1 animate-pulse fas fa-heart'/> {siteConfig('AUTHOR')}</a>. <br /></span>
 

@@ -1,8 +1,9 @@
-import BLOG from '@/blog.config'
-import { siteConfig } from '@/lib/config'
-import { getGlobalData } from '@/lib/db/getSiteData'
-import { getLayoutByTheme } from '@/themes/theme'
+import { getGlobalData } from '@/lib/notion/getNotionData'
+import { useGlobal } from '@/lib/global'
 import { useRouter } from 'next/router'
+import BLOG from '@/blog.config'
+import { getLayoutByTheme } from '@/themes/theme'
+import { siteConfig } from '@/lib/config'
 
 /**
  * 搜索路由
@@ -10,16 +11,14 @@ import { useRouter } from 'next/router'
  * @returns
  */
 const Search = props => {
-  const { posts } = props
+  const { posts, siteInfo } = props
+  const { locale } = useGlobal()
 
   // 根据页面路径加载不同Layout文件
-  const Layout = getLayoutByTheme({
-    theme: siteConfig('THEME'),
-    router: useRouter()
-  })
+  const Layout = getLayoutByTheme({ theme: siteConfig('THEME'), router: useRouter() })
 
   const router = useRouter()
-  const keyword = router?.query?.s
+  const keyword = getSearchKey(router)
 
   let filteredPosts
   // 静态过滤
@@ -28,14 +27,22 @@ const Search = props => {
       const tagContent = post?.tags ? post?.tags.join(' ') : ''
       const categoryContent = post.category ? post.category.join(' ') : ''
       const searchContent =
-        post.title + post.summary + tagContent + categoryContent
+                post.title + post.summary + tagContent + categoryContent
       return searchContent.toLowerCase().includes(keyword.toLowerCase())
     })
   } else {
     filteredPosts = []
   }
 
-  props = { ...props, posts: filteredPosts }
+  const meta = {
+    title: `${keyword || ''}${keyword ? ' | ' : ''}${locale.NAV.SEARCH} | ${siteConfig('TITLE')}`,
+    description: siteConfig('DESCRIPTION'),
+    image: siteInfo?.pageCover,
+    slug: 'search',
+    type: 'website'
+  }
+
+  props = { ...props, meta, posts: filteredPosts }
 
   return <Layout {...props} />
 }
@@ -43,25 +50,24 @@ const Search = props => {
 /**
  * 浏览器前端搜索
  */
-export async function getStaticProps({ locale }) {
+export async function getStaticProps() {
   const props = await getGlobalData({
     from: 'search-props',
-    locale
+    pageType: ['Post']
   })
   const { allPages } = props
-  props.posts = allPages?.filter(
-    page => page.type === 'Post' && page.status === 'Published'
-  )
+  props.posts = allPages?.filter(page => page.type === 'Post' && page.status === 'Published')
   return {
     props,
-    revalidate: process.env.EXPORT
-      ? undefined
-      : siteConfig(
-          'NEXT_REVALIDATE_SECOND',
-          BLOG.NEXT_REVALIDATE_SECOND,
-          props.NOTION_CONFIG
-        )
+    revalidate: parseInt(BLOG.NEXT_REVALIDATE_SECOND)
   }
+}
+
+function getSearchKey(router) {
+  if (router.query && router.query.s) {
+    return router.query.s
+  }
+  return null
 }
 
 export default Search

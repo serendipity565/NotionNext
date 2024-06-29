@@ -33,6 +33,7 @@ import { Transition } from '@headlessui/react'
 import { Style } from './style'
 import replaceSearchResult from '@/components/Mark'
 import ArticleInfo from './components/ArticleInfo'
+import CommonHead from '@/components/CommonHead'
 import { siteConfig } from '@/lib/config'
 
 // 主题全局状态
@@ -46,33 +47,20 @@ export const useMediumGlobal = () => useContext(ThemeGlobalMedium)
  * @constructor
  */
 const LayoutBase = props => {
-  const { children, showInfoCard = true, post, notice } = props
+  const { children, showInfoCard = true, slotRight, slotTop, notice, meta } = props
   const { locale } = useGlobal()
   const router = useRouter()
   const [tocVisible, changeTocVisible] = useState(false)
-  const { onLoading, fullWidth } = useGlobal()
-  const [slotRight, setSlotRight] = useState(null);
-
-  useEffect(()=> {
-    if (post?.toc?.length > 0) {
-      setSlotRight(
-        <div key={locale.COMMON.TABLE_OF_CONTENTS}>
-          <Catalog toc={post?.toc} />
-        </div>
-      );
-    } else {
-      setSlotRight(null);
-    }
-  },[post])
-
-  const slotTop = <BlogPostBar {...props} />
+  const { onLoading } = useGlobal()
 
   return (
         <ThemeGlobalMedium.Provider value={{ tocVisible, changeTocVisible }}>
+            {/* SEO相关 */}
+            <CommonHead meta={meta}/>
             {/* CSS样式 */}
-            <Style />
+            <Style/>
 
-            <div id='theme-medium' className={`${siteConfig('FONT_STYLE')} bg-white dark:bg-hexo-black-gray w-full h-full min-h-screen justify-center dark:text-gray-300 scroll-smooth`}>
+            <div id='theme-medium' className='bg-white dark:bg-hexo-black-gray w-full h-full min-h-screen justify-center dark:text-gray-300'>
 
                 <main id='wrapper' className={(JSON.parse(siteConfig('LAYOUT_SIDEBAR_REVERSE')) ? 'flex-row-reverse' : '') + 'relative flex justify-between w-full h-full mx-auto'}>
                     {/* 桌面端左侧菜单 */}
@@ -84,7 +72,7 @@ const LayoutBase = props => {
                         {/* 顶部导航栏 */}
                         <TopNavBar {...props} />
 
-                        <div id='container-inner' className={`px-7 ${fullWidth ? '' : 'max-w-5xl'} justify-center mx-auto min-h-screen`}>
+                        <div id='container-inner' className='px-7 max-w-5xl justify-center mx-auto min-h-screen'>
                             <Transition
                                 show={!onLoading}
                                 appear={true}
@@ -108,23 +96,20 @@ const LayoutBase = props => {
                     </div>
 
                     {/* 桌面端右侧 */}
-                    {fullWidth
-                      ? null
-                      : <div className={`hidden xl:block border-l dark:border-transparent w-80 flex-shrink-0 relative z-10 ${siteConfig('MEDIUM_RIGHT_PANEL_DARK', null, CONFIG) ? 'bg-hexo-black-gray dark' : ''}`}>
-                            <div className='py-14 px-6 sticky top-0'>
-                                <Tabs>
-                                    {slotRight}
-                                    <div key={locale.NAV.ABOUT}>
-                                        {router.pathname !== '/search' && <SearchInput className='mt-6  mb-12' />}
-                                        {showInfoCard && <InfoCard {...props} />}
-                                        {siteConfig('MEDIUM_WIDGET_REVOLVER_MAPS', null, CONFIG) === 'true' && <RevolverMaps />}
-                                    </div>
-                                </Tabs>
-                                <Announcement post={notice} />
-                                <Live2D />
-                            </div>
-                        </div>}
-
+                    <div className={`hidden xl:block border-l dark:border-transparent w-96 relative z-10 ${siteConfig('MEDIUM_RIGHT_PANEL_DARK', null, CONFIG) ? 'bg-hexo-black-gray dark' : ''}`}>
+                        <div className='py-14 px-6 sticky top-0'>
+                            <Tabs>
+                                {slotRight}
+                                <div key={locale.NAV.ABOUT}>
+                                    {router.pathname !== '/search' && <SearchInput className='mt-6  mb-12' />}
+                                    {showInfoCard && <InfoCard {...props} />}
+                                    {siteConfig('MEDIUM_WIDGET_REVOLVER_MAPS', null, CONFIG) === 'true' && <RevolverMaps />}
+                                </div>
+                            </Tabs>
+                            <Announcement post={notice} />
+                            <Live2D />
+                        </div>
+                    </div>
                 </main>
 
                 {/* 移动端底部导航栏 */}
@@ -149,9 +134,10 @@ const LayoutIndex = (props) => {
  * @returns
  */
 const LayoutPostList = (props) => {
-  return <>
+  const slotTop = <BlogPostBar {...props} />
+  return <LayoutBase {...props} slotTop={slotTop}>
         {siteConfig('POST_LIST_STYLE') === 'page' ? <BlogPostListPage {...props} /> : <BlogPostListScroll {...props} />}
-    </>
+    </LayoutBase>
 }
 
 /**
@@ -168,32 +154,15 @@ const LayoutSlug = props => {
         </div>
   )
 
-  const router = useRouter()
-  useEffect(() => {
-    // 404
-    if (!post) {
-      setTimeout(() => {
-        if (isBrowser) {
-          const article = document.getElementById('notion-article')
-          if (!article) {
-            router.push('/404').then(() => {
-              console.warn('找不到页面', router.asPath)
-            })
-          }
-        }
-      }, siteConfig('POST_WAITING_TIME_FOR_404') * 1000)
-    }
-  }, [post])
-
   return (
-        <div {...props} >
+        <LayoutBase showInfoCard={true} slotRight={slotRight} {...props} >
             {/* 文章锁 */}
             {lock && <ArticleLock validPassword={validPassword} />}
 
             {!lock && <div id='article-wrapper'>
 
                 {/* 文章信息 */}
-                <ArticleInfo {...props} />
+                <ArticleInfo {...props}/>
 
                 {/* Notion文章主体 */}
                 <section className="px-1 max-w-4xl">
@@ -220,7 +189,7 @@ const LayoutSlug = props => {
                 {/* 移动端目录 */}
                 <TocDrawer {...props} />
             </div>}
-        </div>
+        </LayoutBase>
   )
 }
 
@@ -248,7 +217,7 @@ const LayoutSearch = (props) => {
     }
   }, [])
 
-  return <>
+  return <LayoutBase {...props}>
 
         {/* 搜索导航栏 */}
         <div className='py-12'>
@@ -264,7 +233,7 @@ const LayoutSearch = (props) => {
         {currentSearch && <div>
             {siteConfig('POST_LIST_STYLE') === 'page' ? <BlogPostListPage {...props} /> : <BlogPostListScroll {...props} />}
         </div>}
-    </>
+    </LayoutBase>
 }
 
 /**
@@ -275,12 +244,12 @@ const LayoutSearch = (props) => {
 const LayoutArchive = props => {
   const { archivePosts } = props
   return (
-        <>
+        <LayoutBase {...props}>
             <div className="mb-10 pb-20 md:py-12 py-3  min-h-full">
                 {Object.keys(archivePosts)?.map(archiveTitle => <BlogArchiveItem key={archiveTitle} archiveTitle={archiveTitle} archivePosts={archivePosts} />
                 )}
             </div>
-        </>
+        </LayoutBase>
   )
 }
 
@@ -290,9 +259,9 @@ const LayoutArchive = props => {
  * @returns
  */
 const Layout404 = props => {
-  return <>
+  return <LayoutBase {...props}>
         <div className='w-full h-96 py-80 flex justify-center items-center'>404 Not found.</div>
-    </>
+    </LayoutBase>
 }
 
 /**
@@ -304,7 +273,7 @@ const LayoutCategoryIndex = (props) => {
   const { categoryOptions } = props
   const { locale } = useGlobal()
   return (
-        <>
+        <LayoutBase {...props}>
             <div className='bg-white dark:bg-gray-700 py-10'>
                 <div className='dark:text-gray-200 mb-5'>
                     <i className='mr-4 fas fa-th' />{locale.COMMON.CATEGORY}:
@@ -326,7 +295,7 @@ const LayoutCategoryIndex = (props) => {
                     })}
                 </div>
             </div>
-        </>
+        </LayoutBase>
   )
 }
 
@@ -339,7 +308,7 @@ const LayoutTagIndex = props => {
   const { tagOptions } = props
   const { locale } = useGlobal()
   return (
-        <>
+        <LayoutBase {...props}>
             <div className="bg-white dark:bg-gray-700 py-10">
                 <div className="dark:text-gray-200 mb-5">
                     <i className="mr-4 fas fa-tag" />
@@ -355,13 +324,12 @@ const LayoutTagIndex = props => {
                     })}
                 </div>
             </div>
-        </>
+        </LayoutBase>
   )
 }
 
 export {
   CONFIG as THEME_CONFIG,
-  LayoutBase,
   LayoutIndex,
   LayoutPostList,
   LayoutSearch,

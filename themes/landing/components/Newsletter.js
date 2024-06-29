@@ -1,4 +1,4 @@
-import { subscribeToNewsletter } from '@/lib/plugins/mailchimp'
+import { subscribeToNewsletter } from '@/lib/mailchimp'
 import { useEffect, useRef, useState } from 'react'
 import CONFIG from '../config'
 import { siteConfig } from '@/lib/config'

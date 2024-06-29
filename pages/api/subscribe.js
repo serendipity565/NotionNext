@@ -1,4 +1,4 @@
-import subscribeToMailchimpApi from '@/lib/plugins/mailchimp'
+import subscribeToMailchimpApi from '@/lib/mailchimp'
 
 /**
  * 接受邮件订阅
